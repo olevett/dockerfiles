@@ -1,0 +1,20 @@
+FROM microsoft/aspnet:4.7.1
+
+# Install remote management features
+RUN Install-WindowsFeature -name Web-Mgmt-Tools -IncludeAllSubFeature
+
+# Enable Registry Key to allow IIS Remote Management
+RUN New-ItemProperty -Path HKLM:\software\microsoft\WebManagement\Server -Name EnableRemoteManagement -Value 1 -Force
+
+# Install url rewrite module
+ADD https://download.microsoft.com/download/C/9/E/C9E8180D-4E51-40A6-A9BF-776990D8BCA9/rewrite_amd64.msi /install/rewrite_amd64.msi
+RUN & msiexec.exe /i c:\install\rewrite_amd64.msi /passive
+
+# Create local user and include on local administrators group
+RUN net user sitecore Password123$ /add; \
+    net localgroup administrators sitecore /add
+
+# Install VS Remote Tools
+EXPOSE 4020 4021
+ADD  http://download.microsoft.com/download/1/2/2/1225c23d-3599-48c9-a314-f7d631f43241/rtools_setup_x64.exe /install/rtools_setup_x64.exe
+RUN & "c:\install\rtools_setup_x64.exe" /install /quiet
